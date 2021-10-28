@@ -1,3 +1,12 @@
-from django.shortcuts import render
+from django.http import HttpResponse
 
-# Create your views here.
+def index(request):
+    return HttpResponse('Hey')
+
+
+def get_beers(request):
+    return HttpResponse('Get-beers')
+
+
+def post_beers(request):
+    return HttpResponse('Post-beers')
