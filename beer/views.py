@@ -1,4 +1,20 @@
 from django.http import HttpResponse
+import pandas as pd
+
+from beer.models import Beer, Category
+
+data_path = './data/beer_new_reviews.csv'
+
+
+def save_to_beer(entry):
+    beer = Beer(name=entry[0], number=entry[1])
+    beer.save()
+
+
+def save_to_category(entry):
+    category = Category(name=entry)
+    category.save()
+
 
 def index(request):
     return HttpResponse('Hey')
@@ -10,3 +26,53 @@ def get_beers(request):
 
 def post_beers(request):
     return HttpResponse('Post-beers')
+
+
+def populate_beers(request):
+    data = pd.read_csv(data_path)
+
+    beers: pd.DataFrame = data[['beer_name', 'beer_beerid']].drop_duplicates()
+    beers.apply(save_to_beer, axis=1)
+
+    return HttpResponse(f'Done. Posted {len(beers)} beers')
+
+
+def populate_categories(request):
+    data = pd.read_csv(data_path)
+
+    categories = data['beer_style'].drop_duplicates()
+    categories.apply(save_to_category)
+    return HttpResponse(f'{len(categories)} categories have been saved.')
+
+
+def delete_categories(request):
+    categories = Category.objects.all()
+    for c in categories:
+        c.delete()
+    return HttpResponse('All good')
+
+
+def populate_beer_to_categories(request):
+    data = pd.read_csv(data_path)[['beer_beerid', 'beer_style']]
+    categories = Category.objects.all()
+    for category in categories:
+        beer_ids = list(data['beer_beerid'][data['beer_style'] == category.name].unique())
+        print(f'Populating category {category.name} with {len(beer_ids)} beers')
+        for beer_id in beer_ids:
+            beer = Beer.objects.get(number=beer_id)
+            category.beers.add(beer)
+
+    return HttpResponse(f'All Good')
+
+
+def get_beers_with_category(request, slug):
+    category = Category.objects.get(name=slug)
+    beers = {(beer.number, beer.name) for beer in category.beers.all()}
+    return HttpResponse(f'{beers}')
+
+
+def delete_beers(request):
+    beers = Beer.objects.all()
+    for b in beers:
+        b.delete()
+    return HttpResponse('All good')
