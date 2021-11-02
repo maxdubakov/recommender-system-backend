@@ -7,7 +7,7 @@ data_path = './data/beer_new_reviews.csv'
 
 
 def save_to_beer(entry):
-    beer = Beer(name=entry[0], number=entry[1])
+    beer = Beer(name=entry[0], id=entry[1])
     beer.save()
 
 
@@ -55,11 +55,12 @@ def delete_categories(request):
 def populate_beer_to_categories(request):
     data = pd.read_csv(data_path)[['beer_beerid', 'beer_style']]
     categories = Category.objects.all()
-    for category in categories:
+    number_of_cat = len(categories)
+    for i, category in enumerate(categories):
         beer_ids = list(data['beer_beerid'][data['beer_style'] == category.name].unique())
-        print(f'Populating category {category.name} with {len(beer_ids)} beers')
+        print(f'Populating category {category.name} with {len(beer_ids)} beers ({i}/{number_of_cat})')
         for beer_id in beer_ids:
-            beer = Beer.objects.get(number=beer_id)
+            beer = Beer.objects.get(id=beer_id)
             category.beers.add(beer)
 
     return HttpResponse(f'All Good')
