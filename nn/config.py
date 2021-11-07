@@ -13,7 +13,7 @@ class Config(object):
     embedding_dim = 8
     first_layer = embedding_dim * 2
     save_model = True
-    epochs = 5
+    epochs = 1
     gpus = 0
     reload_dataloaders_every_n_epochs = 0
     progress_bar_refresh_rate = 50
@@ -21,9 +21,11 @@ class Config(object):
     date_cols = ['review_time']
     rank_latest = 'rank_latest'
     save_model_name = 'web'
-    load_model_name = 'web'
-    save_path = f'./beer/nn/models/model_{save_model_name}.pkl'
-    load_path = f'./beer/nn/models/model_{load_model_name}.pkl'
+    load_model_name = 'new'
+    save_path = f'./nn/models/model_{save_model_name}.pkl'
+    file_save_path = './temp/file.txt'
+    user_to_int_path = f'./nn/models/review_profilename_to_user_id.pkl'
+    load_path = f'./nn/models/model_{load_model_name}.pkl'
 
     def __init__(self, _num_negatives=4, _batch_size=512, _embedding_dim=8, _epochs=5, _first_layer=16):
         Config.set_num_negatives(_num_negatives)

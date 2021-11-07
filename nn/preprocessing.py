@@ -14,7 +14,7 @@ def str_to_id(ratings: pd.DataFrame, col_name: str, new_col_name):
     unique_values = ratings[col_name].unique()
     name_to_int = dict(zip(ratings[col_name].unique(), range(len(unique_values))))
 
-    pkl.dump(name_to_int, open('./beer/nn/models/review_profilename_to_user_id.pkl', 'wb+'), protocol=pkl.HIGHEST_PROTOCOL)
+    pkl.dump(name_to_int, open(Config.user_to_int_path, 'wb+'), protocol=pkl.HIGHEST_PROTOCOL)
 
     ratings[new_col_name] = ratings[col_name].apply(lambda name: name_to_int[name])
     return ratings

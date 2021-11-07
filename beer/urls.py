@@ -3,7 +3,6 @@ from . import views
 
 urlpatterns = [
     path('get-categories', views.get_categories),
-    path('beers', views.train_nn),
 
     # DEVELOPMENT ENDPOINTS
     path('train', views.dev_train),

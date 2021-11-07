@@ -43,7 +43,10 @@ data_path = './data/beer_new_reviews.csv'
 
 def dev_train(request):
     try:
-        os.system('python3 ./beer/nn/main.py')
+        exit_code = os.system('python3 ./nn/main.py')
+        print(exit_code)
+        with open('./temp/file.txt', 'r') as f:
+            print(f.readlines())
     except Exception as e:
         print(e)
     return HttpResponse(f'Hit ratio: {0.84}')

@@ -21,7 +21,7 @@ def train(num_users, num_items, train_ratings, all_beer_ids):
             pkl.dump(model, f, protocol=pkl.HIGHEST_PROTOCOL)
         if Config.verbose:
             print(f'The NFC model has been saved to the {Config.save_path}')
-
+    # model = pkl.load(open(Config.load_path, 'rb'))
     return model
 
 
