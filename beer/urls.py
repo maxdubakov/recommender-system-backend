@@ -5,7 +5,6 @@ urlpatterns = [
     path('get-categories', views.get_categories),
 
     # DEVELOPMENT ENDPOINTS
-    path('train', views.dev_train),
     path('populate-beers', views.populate_beers),
     path('delete-beers', views.delete_beers),
     path('populate-categories', views.populate_categories),

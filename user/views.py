@@ -1,7 +1,8 @@
 import pickle as pkl
+import random
 
 import pandas as pd
-from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Max
 
@@ -32,10 +33,15 @@ def post_user_categories(request):
         user_id = int(request.POST["user_id"])
         category_ids = [int(_id) for _id in request.POST.getlist('categories')]
         user = User.objects.get(id=user_id)
+        beers_for_categories = []
         for cat_id in category_ids:
             category = Category.objects.get(id=cat_id)
             user.categories.add(category)
-        return JsonResponse({'Response': 'All good :)'})
+            all_beers = list(category.beers.all())
+            if len(all_beers) >= 5:
+                beers = [{'id': beer.id, 'name': beer.name} for beer in random.sample(all_beers, 5)]
+                beers_for_categories.append({category.name: beers})
+        return JsonResponse({'categories': beers_for_categories})
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=400)
 
@@ -55,7 +61,6 @@ def post_user_beers(request):
 
 
 def get_user_beers(request):
-
     try:
         user_id = int(request.GET['user_id'])
         user = User.objects.get(id=user_id)
@@ -70,6 +75,16 @@ def get_user_beers(request):
         })
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=400)
+
+
+def predict_beers(request):
+    try:
+        user_id = int(request.GET['user_id'])
+        user = User.objects.get(id=user_id)
+        beers = [{'id': beer.id, 'name': beer.name} for beer in random.sample(list(Beer.objects.all()), 20)]
+        return JsonResponse({'user': {'id': user.id, 'name': user.name} ,'beers': beers})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
 
 
 # DEVELOPMENT ENDPOINTS
