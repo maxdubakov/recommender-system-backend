@@ -5,10 +5,13 @@ from beer.models import Beer, Category
 
 
 def get_categories(request):
-    categories = []
-    for category in Category.objects.all():
-        categories.append({"id": category.id, "name": category.name})
-    return JsonResponse({"categories": categories})
+    try:
+        categories = []
+        for category in Category.objects.all():
+            categories.append({"id": category.id, "name": category.name})
+        return JsonResponse({"categories": categories})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=400)
 
 
 # DEVELOPMENT ENDPOINTS

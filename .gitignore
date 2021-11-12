@@ -121,3 +121,4 @@ data
 nn/models
 beer/nn/models
 temp
+.ebextensions
