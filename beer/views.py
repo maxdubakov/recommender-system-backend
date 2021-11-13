@@ -51,7 +51,8 @@ def delete_categories(request):
         c.delete()
     return HttpResponse('All good')
 
-
+# TODO: include 1 new category: uncategorized and assign to it all beers
+#  which are not assigned to any of categories
 def populate_beer_to_categories(request):
     data = pd.read_csv(data_path)[['beer_beerid', 'beer_style']]
     categories = Category.objects.all()

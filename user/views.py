@@ -1,16 +1,25 @@
+import os
 import pickle as pkl
 import random
 
 import pandas as pd
+import torch
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Max
 
 from beer.models import Beer
+from nn.NCF import NCF
 from user.models import User
 from beer.models import Category
 
 data_path = './data/beer_new_reviews.csv'
+
+all_beer_ids = pkl.load(open('./nn/models/all_beer_ids.pkl', 'rb'))
+model = NCF(33388, 77318, [], all_beer_ids)
+model.load_state_dict(torch.load('./nn/models/model_dict.pt'))
+model.eval()
+
 
 @csrf_exempt
 def post_user(request):
@@ -30,7 +39,8 @@ def post_user(request):
 @csrf_exempt
 def post_user_categories(request):
     try:
-        user_id = int(request.POST["user_id"])
+        user_id = int(request.POST['user_id'])
+        n = int(request.POST['n'])
         category_ids = [int(_id) for _id in request.POST.getlist('categories')]
         user = User.objects.get(id=user_id)
         beers_for_categories = []
@@ -38,9 +48,9 @@ def post_user_categories(request):
             category = Category.objects.get(id=cat_id)
             user.categories.add(category)
             all_beers = list(category.beers.all())
-            if len(all_beers) >= 5:
-                beers = [{'id': beer.id, 'name': beer.name} for beer in random.sample(all_beers, 5)]
-                beers_for_categories.append({category.name: beers})
+            beers = [{'id': beer.id, 'name': beer.name}
+                     for beer in random.sample(all_beers, min(len(all_beers), n))]
+            beers_for_categories.append({category.name: beers})
         return JsonResponse({'categories': beers_for_categories})
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=400)
@@ -78,13 +88,60 @@ def get_user_beers(request):
 
 
 def predict_beers(request):
+    global model
     try:
         user_id = int(request.GET['user_id'])
+        n = int(request.GET['n'])
+        if n < 0:
+            return HttpResponse('n is less than 0', status=400)
+
         user = User.objects.get(id=user_id)
-        beers = [{'id': beer.id, 'name': beer.name} for beer in random.sample(list(Beer.objects.all()), 20)]
-        return JsonResponse({'user': {'id': user.id, 'name': user.name} ,'beers': beers})
+
+        beer_ids = [beer.id for beer in list(Beer.objects.all())]
+        user_tensor = torch.tensor([user_id for _ in range(len(beer_ids))])
+        beer_tensor = torch.tensor(beer_ids)
+
+        results = model(user_tensor, beer_tensor).detach().squeeze().tolist()
+        results_with_beer_ids = sorted([[b_id, rating] for b_id, rating in zip(beer_ids, results)],
+                                       key=lambda _e: 1 - _e[1])[0:n]
+        results_with_beers = []
+        for beer_id, rating in results_with_beer_ids:
+            beer = Beer.objects.get(id=beer_id)
+            categories = beer.category_set.all()
+            if len(categories) > 0:
+                category = categories[0].name
+            else:
+                category = 'Uncategorized'
+
+            results_with_beers.append(
+                {
+                    'beer_id': beer.id,
+                    'beer_name': beer.name,
+                    'category': category,
+                    'rating': rating
+                })
+
+        return JsonResponse(
+            {
+                'user': {
+                    'id': user.id,
+                    'name': user.name
+                },
+                'beers': results_with_beers
+            })
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
+
+
+def train(request):
+    new_user_id = [33387 for i in range(5)]
+    new_users_beer_ids = [47986, 64883, 33061, 33061, 48213]
+    new_user_ratings = [1 for i in range(5)]
+    new_train_ratings = pd.DataFrame(data=list(zip(new_user_id, new_users_beer_ids, new_user_ratings)),
+                                     columns=['user_id', 'beer_id', 'rating'])
+    pkl.dump(new_train_ratings, open('./nn/data/data.pkl', 'wb+'), protocol=pkl.HIGHEST_PROTOCOL)
+    os.system('python3 nn/train.py')
+    return HttpResponse('All Good!')
 
 
 # DEVELOPMENT ENDPOINTS
@@ -99,6 +156,7 @@ def populate_users(request):
     users = data['review_profilename'].drop_duplicates().dropna()
     users.apply(lambda username: save_user(profile_names_to_id, username))
     return HttpResponse('All Good')
+
 
 def populate_users_beers(request):
     data = pd.read_csv(data_path)
@@ -119,4 +177,5 @@ def populate_users_beers(request):
 
 def get_beers_for_user(request, slug):
     user = User.objects.get(name=slug)
-    return HttpResponse(f'All Good:\n {[beer.name for beer in user.beers.all()]}\n\n{user.name}\n\n {len(user.beers.all())}')
+    return HttpResponse(
+        f'All Good:\n {[beer.name for beer in user.beers.all()]}\n\n{user.name}\n\n {len(user.beers.all())}')
