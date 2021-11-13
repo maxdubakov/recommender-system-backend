@@ -122,3 +122,4 @@ nn/models
 beer/nn/models
 temp
 .ebextensions
+lightning_logs
