@@ -36,6 +36,7 @@ ALLOWED_HOSTS = [
 INSTALLED_APPS = [
     'beer',
     'user',
+    'populate',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
