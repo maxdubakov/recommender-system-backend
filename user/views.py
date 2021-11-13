@@ -112,11 +112,10 @@ def predict_beers(request):
         for beer_id, rating in results_with_beer_ids:
             beer = Beer.objects.get(id=beer_id)
             categories = beer.category_set.all()
-            # TODO: to be changed when DB will be populated properly
             if len(categories) > 0:
                 category = categories[0].name
             else:
-                category = 'Uncategorized'
+                category = 'Uncategorized'  # Should never happen
 
             results_with_beers.append(
                 {
@@ -187,3 +186,8 @@ def get_beers_for_user(request, slug):
     user = User.objects.get(name=slug)
     return HttpResponse(
         f'All Good:\n {[beer.name for beer in user.beers.all()]}\n\n{user.name}\n\n {len(user.beers.all())}')
+
+
+def get_all_user_ids(request):
+    users = [{user.id: user.name} for user in User.objects.all()]
+    return JsonResponse({'users': users})

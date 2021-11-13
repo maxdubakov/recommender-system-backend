@@ -9,6 +9,7 @@ urlpatterns = [
     path('predict-beers', views.predict_beers),
 
     # DEVELOPMENT ENDPOINTS
+    path('get-all-user-ids', views.get_all_user_ids),
     path('populate-users', views.populate_users),
     path('populate-users-beers', views.populate_users_beers),
     path('get-user-beers/<slug:slug>', views.get_beers_for_user),

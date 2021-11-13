@@ -20,5 +20,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('beer/', include('beer.urls')),
     path('user/', include('user.urls')),
-    path('populate/', include('populate.urls'))
+    path('db/', include('db.urls'))
 ]
