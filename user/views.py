@@ -1,6 +1,7 @@
 import os
 import pickle as pkl
 import random
+import requests
 
 import pandas as pd
 import torch
@@ -89,6 +90,9 @@ def get_user_beers(request):
 
 def predict_beers(request):
     global model
+    # req_path = os.getenv('ALLOWED_HOST')
+    response = requests.get(f'http://127.0.0.1/beer/get-categories?')
+    print(response)
     try:
         user_id = int(request.GET['user_id'])
         n = int(request.GET['n'])
@@ -108,6 +112,7 @@ def predict_beers(request):
         for beer_id, rating in results_with_beer_ids:
             beer = Beer.objects.get(id=beer_id)
             categories = beer.category_set.all()
+            # TODO: to be changed when DB will be populated properly
             if len(categories) > 0:
                 category = categories[0].name
             else:
@@ -134,14 +139,17 @@ def predict_beers(request):
 
 
 def train(request):
-    new_user_id = [33387 for i in range(5)]
-    new_users_beer_ids = [47986, 64883, 33061, 33061, 48213]
-    new_user_ratings = [1 for i in range(5)]
-    new_train_ratings = pd.DataFrame(data=list(zip(new_user_id, new_users_beer_ids, new_user_ratings)),
-                                     columns=['user_id', 'beer_id', 'rating'])
-    pkl.dump(new_train_ratings, open('./nn/data/data.pkl', 'wb+'), protocol=pkl.HIGHEST_PROTOCOL)
-    os.system('python3 nn/train.py')
-    return HttpResponse('All Good!')
+    try:
+        new_user_id = [33387 for i in range(5)]
+        new_users_beer_ids = [47986, 64883, 33061, 33061, 48213]
+        new_user_ratings = [1 for i in range(5)]
+        new_train_ratings = pd.DataFrame(data=list(zip(new_user_id, new_users_beer_ids, new_user_ratings)),
+                                         columns=['user_id', 'beer_id', 'rating'])
+        pkl.dump(new_train_ratings, open('./nn/data/data.pkl', 'wb+'), protocol=pkl.HIGHEST_PROTOCOL)
+        os.system('python3 nn/train.py')
+        return HttpResponse('All Good!')
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
 
 
 # DEVELOPMENT ENDPOINTS
