@@ -1,7 +1,6 @@
 import os
 import pickle as pkl
 import random
-import requests
 
 import pandas as pd
 import torch
@@ -10,16 +9,11 @@ from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Max
 
 from beer.models import Beer
-from nn.NCF import NCF
 from user.models import User
 from beer.models import Category
+from .util import format_results, load_model
 
-data_path = './data/beer_new_reviews.csv'
-
-all_beer_ids = pkl.load(open('./nn/models/all_beer_ids.pkl', 'rb'))
-model = NCF(33388, 77318, [], all_beer_ids)
-model.load_state_dict(torch.load('./nn/models/model_dict.pt'))
-model.eval()
+model = load_model()
 
 
 @csrf_exempt
@@ -89,10 +83,6 @@ def get_user_beers(request):
 
 
 def predict_beers(request):
-    global model
-    # req_path = os.getenv('ALLOWED_HOST')
-    response = requests.get(f'http://127.0.0.1/beer/get-categories?')
-    print(response)
     try:
         user_id = int(request.GET['user_id'])
         n = int(request.GET['n'])
@@ -108,23 +98,7 @@ def predict_beers(request):
         results = model(user_tensor, beer_tensor).detach().squeeze().tolist()
         results_with_beer_ids = sorted([[b_id, rating] for b_id, rating in zip(beer_ids, results)],
                                        key=lambda _e: 1 - _e[1])[0:n]
-        results_with_beers = []
-        for beer_id, rating in results_with_beer_ids:
-            beer = Beer.objects.get(id=beer_id)
-            categories = beer.category_set.all()
-            if len(categories) > 0:
-                category = categories[0].name
-            else:
-                category = 'Uncategorized'  # Should never happen
-
-            results_with_beers.append(
-                {
-                    'beer_id': beer.id,
-                    'beer_name': beer.name,
-                    'category': category,
-                    'rating': rating
-                })
-
+        results_with_beers = format_results(results_with_beer_ids)
         return JsonResponse(
             {
                 'user': {
@@ -149,45 +123,3 @@ def train(request):
         return HttpResponse('All Good!')
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
-
-
-# DEVELOPMENT ENDPOINTS
-def save_user(profile_names_to_id, username):
-    user = User(name=username, id=profile_names_to_id[username])
-    user.save()
-
-
-def populate_users(request):
-    data = pd.read_csv(data_path)
-    profile_names_to_id = pkl.load(open('./data/review_profilename_to_user_id.pkl', 'rb'))
-    users = data['review_profilename'].drop_duplicates().dropna()
-    users.apply(lambda username: save_user(profile_names_to_id, username))
-    return HttpResponse('All Good')
-
-
-def populate_users_beers(request):
-    data = pd.read_csv(data_path)
-
-    users = User.objects.all()
-    number_of_users = len(users)
-    for i, user in enumerate(users):
-        if i >= 100:
-            break
-        beer_ids = list(data['beer_beerid'][data['review_profilename'] == user.name].unique())
-        print(f'Populating {len(beer_ids)} beers for user {user} ({i}/{number_of_users})')
-        for beer_id in beer_ids:
-            beer = Beer.objects.get(id=beer_id)
-            user.beers.add(beer)
-
-    return HttpResponse('All Good')
-
-
-def get_beers_for_user(request, slug):
-    user = User.objects.get(name=slug)
-    return HttpResponse(
-        f'All Good:\n {[beer.name for beer in user.beers.all()]}\n\n{user.name}\n\n {len(user.beers.all())}')
-
-
-def get_all_user_ids(request):
-    users = [{user.id: user.name} for user in User.objects.all()]
-    return JsonResponse({'users': users})
