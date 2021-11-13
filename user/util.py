@@ -1,10 +1,12 @@
 import pickle as pkl
+from datetime import datetime
 
 import torch
 
 from beer.models import Beer
 from user.models import User
 from nn.NCF import NCF
+from nn.config import Config
 
 
 def format_results(results_with_beer_ids):
@@ -41,6 +43,16 @@ def all_beer_ids():
 
 def load_model():
     model = NCF(33388, 77318, [], all_beer_ids())
-    model.load_state_dict(torch.load('./nn/models/model_dict.pt'))
+    model.load_state_dict(torch.load(Config.load_path))
     model.eval()
     return model
+
+
+def load_last_time_trained():
+    return pkl.load(open('./nn/data/last_time_trained.pkl', 'rb'))
+
+
+def save_last_time_trained():
+    pkl.dump(datetime(year=2021, month=11, day=13, hour=15, minute=52),
+             open('./nn/data/last_time_trained.pkl', 'wb+'),
+             protocol=pkl.HIGHEST_PROTOCOL)

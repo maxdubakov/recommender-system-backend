@@ -1,6 +1,8 @@
 import os
 import pickle as pkl
 import random
+import time
+from datetime import datetime
 
 import pandas as pd
 import torch
@@ -9,9 +11,9 @@ from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Max
 
 from beer.models import Beer
-from user.models import User
+from user.models import User, UserBeer
 from beer.models import Category
-from .util import format_results, load_model
+from .util import format_results, load_model, load_last_time_trained, save_last_time_trained
 
 model = load_model()
 
@@ -112,14 +114,29 @@ def predict_beers(request):
 
 
 def train(request):
+    global model
     try:
-        new_user_id = [33387 for i in range(5)]
-        new_users_beer_ids = [47986, 64883, 33061, 33061, 48213]
-        new_user_ratings = [1 for i in range(5)]
-        new_train_ratings = pd.DataFrame(data=list(zip(new_user_id, new_users_beer_ids, new_user_ratings)),
+        save_last_time_trained()
+        last_time_trained = load_last_time_trained()
+        new_user_ids = []
+        new_beer_ids = []
+        for user_beer in UserBeer.objects.filter(
+                date_added__gte=last_time_trained):
+            new_user_ids.append(user_beer.user.id)
+            new_beer_ids.append(user_beer.beer.id)
+
+        if len(new_user_ids) <= 0:
+            return HttpResponse('No users to train')
+
+        new_user_ratings = [1 for _ in range(len(new_user_ids))]
+        new_train_ratings = pd.DataFrame(data=list(zip(new_user_ids, new_beer_ids, new_user_ratings)),
                                          columns=['user_id', 'beer_id', 'rating'])
         pkl.dump(new_train_ratings, open('./nn/data/data.pkl', 'wb+'), protocol=pkl.HIGHEST_PROTOCOL)
         os.system('python3 nn/train.py')
-        return HttpResponse('All Good!')
+
+        model = load_model()
+        save_last_time_trained()
+
+        return HttpResponse('The NN has been retrained!')
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)

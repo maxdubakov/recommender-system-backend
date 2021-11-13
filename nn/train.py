@@ -1,3 +1,5 @@
+import os
+
 import pytorch_lightning as pl
 import pickle as pkl
 
@@ -52,8 +54,9 @@ def retrain_model(model: NCF, new_train_ratings):
 
 if __name__ == '__main__':
     all_beer_ids = pkl.load(open('./nn/models/all_beer_ids.pkl', 'rb'))
+
     loaded_model = NCF(33388, 77318, [], all_beer_ids)
-    loaded_model.load_state_dict(torch.load('./nn/models/model_dict.pt'))
+    loaded_model.load_state_dict(torch.load(Config.load_path))
     loaded_model.eval()
 
     new_ratings = pkl.load(open('./nn/data/data.pkl', 'rb'))
