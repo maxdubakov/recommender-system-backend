@@ -1,7 +1,9 @@
+import os
 import pickle as pkl
 from datetime import datetime
 
 import torch
+import pytz
 
 from beer.models import Beer
 from user.models import User
@@ -42,17 +44,25 @@ def all_beer_ids():
 
 
 def load_model():
-    model = NCF(33388, 77318, [], all_beer_ids())
-    model.load_state_dict(torch.load(Config.load_path))
-    model.eval()
-    return model
+    try:
+        model = NCF(Config.DEFAULT_NUM_USERS, Config.DEFAULT_NUM_ITEMS, [], all_beer_ids())
+        model.load_state_dict(torch.load(Config.load_path))
+        model.eval()
+        return model
+    except Exception as e:
+        print(str(e))
+        return None
 
 
 def load_last_time_trained():
     return pkl.load(open('./nn/data/last_time_trained.pkl', 'rb'))
 
 
-def save_last_time_trained():
-    pkl.dump(datetime(year=2021, month=11, day=13, hour=15, minute=52),
+def save_last_time_trained(_datetime):
+    pkl.dump(_datetime,
              open('./nn/data/last_time_trained.pkl', 'wb+'),
              protocol=pkl.HIGHEST_PROTOCOL)
+
+
+def get_current_datetime():
+    return datetime.now().replace(tzinfo=pytz.UTC)
