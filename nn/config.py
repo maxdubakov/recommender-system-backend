@@ -26,7 +26,7 @@ class Config(object):
     checkpoint_callback = False
     date_cols = ['review_time']
     rank_latest = 'rank_latest'
-    model_id = 'untrained'
+    model_id = 'latest'
     save_path = f'./nn/models/model_{model_id}.pt'
     load_path = f'./nn/models/model_{model_id}.pt'
 

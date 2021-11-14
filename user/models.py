@@ -5,7 +5,7 @@ from beer.models import Beer, Category
 
 class User(models.Model):
     id = models.IntegerField(primary_key=True, db_index=True)
-    name = models.CharField(max_length=20)
+    name = models.CharField(max_length=20, db_index=True)
     beers = models.ManyToManyField(Beer, through='UserBeer')
     categories = models.ManyToManyField(Category)
 

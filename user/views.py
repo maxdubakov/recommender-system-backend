@@ -25,6 +25,8 @@ model = load_model()
 def post_user(request):
     try:
         name = request.POST['name']
+        if User.objects.filter(name=name).exists():
+            return JsonResponse({'error': f'User with name {name} already exists'})
         _id = int(User.objects.all().aggregate(Max('id'))['id__max']) + 1
         new_user = User(id=_id, name=name)
         new_user.save()
@@ -33,7 +35,7 @@ def post_user(request):
             "name": name
         })
     except Exception as e:
-        return JsonResponse({"error": str(e)})
+        return JsonResponse({"error": str(e)}, status=400)
 
 
 @csrf_exempt
@@ -65,7 +67,7 @@ def post_user_beers(request):
         for beer_id in beer_ids:
             beer = Beer.objects.get(id=beer_id)
             user.beers.add(beer)
-        return HttpResponse()
+        return JsonResponse({'success': f'Requested beers has been added to user {user.name}'})
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=400)
 
@@ -116,6 +118,7 @@ def predict_beers(request):
         return JsonResponse({'error': str(e)}, status=400)
 
 
+@csrf_exempt
 def train(request):
     global model
     try:
