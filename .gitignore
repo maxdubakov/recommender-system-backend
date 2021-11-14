@@ -121,3 +121,4 @@ data
 nn/models
 .ebextensions
 lightning_logs
+.DS_Store
