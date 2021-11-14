@@ -1,6 +1,7 @@
 from beer.models import Beer, Category
 from user.models import User, UserBeer
 
+
 def save_beer(entry):
     beer = Beer(name=entry[0], id=entry[1])
     beer.save()

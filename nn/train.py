@@ -1,4 +1,5 @@
 import getopt
+import os.path
 import sys
 
 import pytorch_lightning as pl
@@ -56,6 +57,9 @@ def retrain_model(model: NCF, new_train_ratings):
     if Config.save_model:
         torch.save(model.state_dict(), Config.save_path)
         print(f'The NFC model has been saved to the {Config.save_path}')
+
+    if os.path.exists(Config.retrain_data_path) and os.path.isfile(Config.retrain_data_path):
+        os.remove(Config.retrain_data_path)
 
     return model
 

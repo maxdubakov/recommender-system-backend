@@ -9,30 +9,33 @@ from beer.models import Beer, Category
 from user.models import User, UserBeer
 from .util import save_beer, save_category, save_user, save_user_beer
 
+
 def populate_all(request):
-    start_time = time.time()
-    if len(User.objects.all()) > 0:
-        return HttpResponse('Already populated', status=400)
-    data = pd.read_csv(os.getenv('DATA_PATH'))
-    beers = populate_beers(data)
-    users = populate_users(data)
-    categories = populate_categories(data)
-    user_beers = populate_user_beers(data)
-    category_beers = populate_category_beers(data)
-    end_time = time.time()
-    return JsonResponse({
-        'beers': beers,
-        'users': users,
-        'categories': categories,
-        'user_beers': user_beers,
-        'category_beers': category_beers,
-        'time': f'{str(end_time - start_time)}s'
-    })
+    try:
+        start_time = time.time()
 
+        if len(User.objects.all()) > 0:
+            return HttpResponse('Already populated', status=400)
 
-def delete_all(request):
-    # TODO: implement deleting from all tables
-    return HttpResponse('All Good!')
+        data = pd.read_csv(os.getenv('DATA_PATH'))
+        beers = populate_beers(data)
+        users = populate_users(data)
+        categories = populate_categories(data)
+        user_beers = populate_user_beers(data)
+        category_beers = populate_category_beers(data)
+
+        end_time = time.time()
+
+        return JsonResponse({
+            'beers': beers,
+            'users': users,
+            'categories': categories,
+            'user_beers': user_beers,
+            'category_beers': category_beers,
+            'time': f'{str(end_time - start_time)}s'
+        })
+    except Exception as e:
+        return JsonResponse({'error': str(e)})
 
 
 def populate_beers(data):
@@ -84,4 +87,3 @@ def populate_category_beers(data):
             category.beers.add(beer)
             c += 1
     return c
-

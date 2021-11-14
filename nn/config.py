@@ -4,6 +4,7 @@
 class Config(object):
 
     data_path = './data/beer_new_reviews.csv'
+    retrain_data_path = './nn/data/data.pkl'
     num_workers = 4
     dataset_name = 'Beer'
     part_of_dataset_used = 1

@@ -10,11 +10,13 @@ from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Max
 
 from beer.models import Beer
+from nn.config import Config
 from user.models import User, UserBeer
 from beer.models import Category
 from .util import format_results, \
     load_model, load_last_time_trained, \
     save_last_time_trained, get_current_datetime
+
 
 model = load_model()
 
@@ -136,7 +138,7 @@ def train(request):
         new_user_ratings = [1 for _ in range(len(new_user_ids))]
         new_train_ratings = pd.DataFrame(data=list(zip(new_user_ids, new_beer_ids, new_user_ratings)),
                                          columns=['user_id', 'beer_id', 'rating'])
-        pkl.dump(new_train_ratings, open('./nn/data/data.pkl', 'wb+'), protocol=pkl.HIGHEST_PROTOCOL)
+        pkl.dump(new_train_ratings, open(Config.retrain_data_path, 'wb+'), protocol=pkl.HIGHEST_PROTOCOL)
         os.system(f'python3 nn/train.py -u {os.getenv("NUM_USERS")} -i {os.getenv("NUM_ITEMS")}')
 
         model = load_model()
